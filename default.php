@@ -6,7 +6,8 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Version' => '0.1b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
-    'SettingsUrl' => 'settings/registration'
+    'SettingsUrl' => 'settings/registration',
+    'MobileFriendly' => TRUE
 );
 
 class NoCaptchaReCaptcha extends Gdn_Plugin {
