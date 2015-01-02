@@ -3,7 +3,7 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Name' => 'No Captcha ReCaptcha',
     'Description' => 'Use the new No Captcha ReCaptcha',
     'RequiredApplications' => array('Vanilla' => '2.1'),
-    'Version' => '0.1b',
+    'Version' => '0.1.1b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
     'SettingsUrl' => 'settings/registration',
@@ -154,6 +154,13 @@ if(C('Garden.Registration.Method')=='NoCaptcha'){
     }
 
     function recaptcha_get_html($CaptchaPublicKey, $Error = NULL, $UseSsl = FALSE){
-        return'<div class="g-recaptcha" data-sitekey="'.$CaptchaPublicKey.'"></div>';
+        $Attributes =  C('Plugins.NoCaptchaReCaptcha.Attributes', array());
+        $Attributes = array_merge($Attributes,array('class'=>'g-recaptcha', 'data-sitekey'=>$CaptchaPublicKey));
+        $Plugin = Gdn::PluginManager()->GetPluginInstance('NoCaptchaReCaptcha');
+        if($Plugin){
+            $Plugin->EventArguments['Attributes'] = &$Attributes;
+            $Plugin->FireEvent('BeforeDivReturn');
+        }
+        return'<div '.Attribute($Attributes).'></div>';
     }
 }
