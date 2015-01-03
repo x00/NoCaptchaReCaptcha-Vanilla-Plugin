@@ -3,7 +3,7 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Name' => 'No Captcha ReCaptcha',
     'Description' => 'Use the new No Captcha ReCaptcha',
     'RequiredApplications' => array('Vanilla' => '2.1'),
-    'Version' => '0.1.4b',
+    'Version' => '0.1.5b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
     'SettingsUrl' => 'settings/registration',
@@ -124,53 +124,59 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
 }
 
 if(C('EnabledPlugins.NoCaptchaReCaptcha') && C('Garden.Registration.Method')=='NoCaptcha'){
-    function ValidateCaptcha($Value){
-        $Response = ArrayValue('g-recaptcha-response', $_POST, '');
-        
-        if(!$Response)
-            return FALSE;
-        
-        $Url = 'https://www.google.com/recaptcha/api/siteverify';
-        $Data = array(
-            'secret' => C('Garden.Registration.CaptchaPrivateKey'),
-            'response' => ArrayValue('g-recaptcha-response', $_POST, '')
-        );
+    if(!function_exists('ValidateCaptcha')){
+        function ValidateCaptcha($Value){
+            $Response = ArrayValue('g-recaptcha-response', $_POST, '');
+            
+            if(!$Response)
+                return FALSE;
+            
+            $Url = 'https://www.google.com/recaptcha/api/siteverify';
+            $Data = array(
+                'secret' => C('Garden.Registration.CaptchaPrivateKey'),
+                'response' => $Response
+            );
 
-        $Handler = curl_init();
-        curl_setopt($Handler, CURLOPT_URL, $Url);
-        curl_setopt($Handler, CURLOPT_PORT, '443');
-        curl_setopt($Handler, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($Handler, CURLOPT_HEADER, FALSE);
-        curl_setopt($Handler, CURLOPT_HTTPHEADER, array("Content-Type: application/x-www-form-urlencoded")); 
-        curl_setopt($Handler, CURLOPT_USERAGENT, ArrayValue('HTTP_USER_AGENT', $_SERVER, 'NoCaptchaReCaptcha Vanilla'));
-        curl_setopt($Handler, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($Handler, CURLOPT_POST, TRUE);
-        curl_setopt($Handler, CURLOPT_POSTFIELDS, http_build_query($Data));
-        
-        $Response = curl_exec($Handler);
-        
-        if($Response){
-            $Result = json_decode($Response);
-            if($Result && GetValue('success', $Result)){
-                return TRUE;
-            }else if(!empty(GetValue('error_codes',$Result)) && GetValue('error_codes',$Result)!=array('invalid-input-response')){
-                throw new Exception(FormatString(T('Could not get check if human! Error codes: {ErrorCodes}'), array('ErrorCodes'=>join(', ',GetValue('error_codes',$Result)))));
+            $Handler = curl_init();
+            curl_setopt($Handler, CURLOPT_URL, $Url);
+            curl_setopt($Handler, CURLOPT_PORT, '443');
+            curl_setopt($Handler, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($Handler, CURLOPT_HEADER, FALSE);
+            curl_setopt($Handler, CURLOPT_HTTPHEADER, array("Content-Type: application/x-www-form-urlencoded")); 
+            curl_setopt($Handler, CURLOPT_USERAGENT, ArrayValue('HTTP_USER_AGENT', $_SERVER, 'NoCaptchaReCaptcha Vanilla'));
+            curl_setopt($Handler, CURLOPT_RETURNTRANSFER, TRUE);
+            curl_setopt($Handler, CURLOPT_POST, TRUE);
+            curl_setopt($Handler, CURLOPT_POSTFIELDS, http_build_query($Data));
+            
+            $Response = curl_exec($Handler);
+            
+            if($Response){
+                $Result = json_decode($Response);
+                $ErrorCodes = GetValue('error_codes',$Result);
+                if($Result && GetValue('success', $Result)){
+                    return TRUE;
+                }else if(!empty($ErrorCodes) && $ErrorCodes!=array('invalid-input-response')){
+                    throw new Exception(FormatString(T('Could not get check if human! Error codes: {ErrorCodes}'), array('ErrorCodes'=>join(', ',$ErrorCodes))));
+                }
+            }else{
+                throw new Exception(T('Could not get check if human!'));
             }
-        }else{
-            throw new Exception(T('Could not get check if human!'));
-        }
 
-        return FALSE;
+            return FALSE;
+        }
+        
     }
 
-    function recaptcha_get_html($CaptchaPublicKey, $Error = NULL, $UseSsl = FALSE){
-        $Attributes =  C('Plugins.NoCaptchaReCaptcha.Attributes', array());
-        $Attributes = array_merge($Attributes,array('class'=>'g-recaptcha', 'data-sitekey'=>$CaptchaPublicKey));
-        $Plugin = Gdn::PluginManager()->GetPluginInstance('NoCaptchaReCaptcha');
-        if($Plugin){
-            $Plugin->EventArguments['Attributes'] = &$Attributes;
-            $Plugin->FireEvent('BeforeDivReturn');
+    if(!function_exists('recaptcha_get_html')){
+        function recaptcha_get_html($CaptchaPublicKey, $Error = NULL, $UseSsl = FALSE){
+            $Attributes =  C('Plugins.NoCaptchaReCaptcha.Attributes', array());
+            $Attributes = array_merge($Attributes,array('class'=>'g-recaptcha', 'data-sitekey'=>$CaptchaPublicKey));
+            $Plugin = Gdn::PluginManager()->GetPluginInstance('NoCaptchaReCaptcha');
+            if($Plugin){
+                $Plugin->EventArguments['Attributes'] = &$Attributes;
+                $Plugin->FireEvent('BeforeDivReturn');
+            }
+            return'<div '.Attribute($Attributes).'></div>';
         }
-        return'<div '.Attribute($Attributes).'></div>';
     }
 }
