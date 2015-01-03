@@ -123,7 +123,7 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
     
 }
 
-if(C('Garden.Registration.Method')=='NoCaptcha'){
+if(C('EnabledPlugins.NoCaptchaReCaptcha') && C('Garden.Registration.Method')=='NoCaptcha'){
     function ValidateCaptcha($Value){
         $Response = ArrayValue('g-recaptcha-response', $_POST, '');
         
