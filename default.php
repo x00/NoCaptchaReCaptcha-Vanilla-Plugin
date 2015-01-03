@@ -3,7 +3,7 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Name' => 'No Captcha ReCaptcha',
     'Description' => 'Use the new No Captcha ReCaptcha',
     'RequiredApplications' => array('Vanilla' => '2.1'),
-    'Version' => '0.1.1b',
+    'Version' => '0.1.3b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
     'SettingsUrl' => 'settings/registration',
@@ -92,6 +92,7 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
                 $Sender->Form->AddError($Ex);
             }
         }
+        $Sender->RequestMethod = 'register';
         $Sender->Head->AddScript('https://www.google.com/recaptcha/api.js');
         $Sender->View = 'RegisterCaptcha';
         $Sender->Render();
@@ -124,13 +125,16 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
 
 if(C('Garden.Registration.Method')=='NoCaptcha'){
     function ValidateCaptcha($Value){
+        $Response = ArrayValue('g-recaptcha-response', $_POST, '');
+        
+        if(!$Response)
+            return FALSE;
         
         $Url = 'https://www.google.com/recaptcha/api/siteverify';
         $Data = array(
             'secret' => C('Garden.Registration.CaptchaPrivateKey'),
             'response' => ArrayValue('g-recaptcha-response', $_POST, '')
         );
-        
 
         $Handler = curl_init();
         curl_setopt($Handler, CURLOPT_URL, $Url);
@@ -144,10 +148,16 @@ if(C('Garden.Registration.Method')=='NoCaptcha'){
         curl_setopt($Handler, CURLOPT_POSTFIELDS, http_build_query($Data));
         
         $Response = curl_exec($Handler);
+        
         if($Response){
             $Result = json_decode($Response);
-            if($Result && GetValue('success', $Result))
+            if($Result && GetValue('success', $Result)){
                 return TRUE;
+            }else if(!empty(GetValue('error_codes',$Result)) && GetValue('error_codes',$Result)!=array('invalid-input-response')){
+                throw new Exception(FormatString(T('Could not get check if human! Error codes: {ErrorCodes}'), array('ErrorCodes'=>join(', ',GetValue('error_codes',$Result)))));
+            }
+        }else{
+            throw new Exception(T('Could not get check if human!'));
         }
 
         return FALSE;
