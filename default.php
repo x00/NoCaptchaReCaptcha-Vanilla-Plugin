@@ -3,7 +3,7 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Name' => 'No Captcha ReCaptcha',
     'Description' => 'Use the new No Captcha ReCaptcha',
     'RequiredApplications' => array('Vanilla' => '2.1'),
-    'Version' => '0.1.3b',
+    'Version' => '0.1.4b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
     'SettingsUrl' => 'settings/registration',
