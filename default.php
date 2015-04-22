@@ -3,7 +3,7 @@ $PluginInfo['NoCaptchaReCaptcha'] = array(
     'Name' => 'No Captcha ReCaptcha',
     'Description' => 'Use the new No Captcha ReCaptcha',
     'RequiredApplications' => array('Vanilla' => '2.1'),
-    'Version' => '0.1.5b',
+    'Version' => '0.1.6b',
     'Author' => "Paul Thomas",
     'AuthorEmail' => 'dt01pqt_pt@yahoo.com',
     'SettingsUrl' => 'settings/registration',
@@ -20,7 +20,7 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
         }
     }
     
-    public function EntryController_RegisterNoCaptcha_Create($Sender){
+    public function EntryController_RegisterNoCaptcha_Create($Sender, $Args){
         $Sender->FireEvent("Register");
         $Sender->Form->SetModel($Sender->UserModel);
 
@@ -92,6 +92,7 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
                 $Sender->Form->AddError($Ex);
             }
         }
+        
         $Sender->RequestMethod = 'register';
         $Sender->Head->AddScript('https://www.google.com/recaptcha/api.js');
         $Sender->View = 'RegisterCaptcha';
@@ -106,7 +107,8 @@ class NoCaptchaReCaptcha extends Gdn_Plugin {
     
     public function Base_BeforeLoadRoutes_Handler($Sender, &$Args){
         if(C('Garden.Registration.Method')=='NoCaptcha'){
-            $this->DynamicRoute($Args['Routes'],'^entry/register([/\?]{1}.*)?$','entry/registernocaptcha','Internal');
+            $QueryStr = http_build_query(Gdn::Request()->Get());
+            $this->DynamicRoute($Args['Routes'],'^entry/register([/\?]{1}.*)?$','entry/registernocaptcha?'.$QueryStr,'Internal');
         }
     }
     
